@@ -1,0 +1,167 @@
+import "Srl/Console";
+import "Srl/Fs";
+import "Srl/String";
+import "Srl/Array";
+import "Srl/Regex";
+import "Srl/refs";
+import "Srl/System";
+import "closure";
+import "Build";
+import "rules";
+
+@merge module Jameel {
+    use Srl;
+
+    def fileContent: String;
+    def output: ptr[Fs.File];
+    def index: Int;
+    def indent: Int;
+
+    function jammil (sourceFile: String, destFile: String) {
+        fileContent.clear();
+        output = 0;
+        index = 0;
+        indent = 0;
+        def rules: Array[SrdRef[Rule]] = getAlususRules();
+
+        fileContent = Fs.readFile(sourceFile);
+        if fileContent == "" {
+            System.fail(1, "Source file not found!");
+        }
+
+        output = Fs.openFile(destFile, "w");
+        if output == 0 {
+            System.fail(1, "Could not open destination file!");
+        }
+
+        while index < fileContent.getLength() {
+            def j: Int;
+            for j = 0, j < rules.getLength(), ++j {
+                if rules(j).run() continue 2;
+            }
+            Fs.print(output, "%c", fileContent(index));
+            ++index;
+        }
+
+        Fs.closeFile(output);
+        Console.print("File processed successfully\n");
+    }
+
+    function getCurrentContent(): CharsPtr {
+        return fileContent.buf + index;
+    }
+
+    function skip(regex: ref[Regex.Matcher]) {
+        def matches: Array[String] = regex.match(getCurrentContent());
+        if matches.getLength() > 0 {
+            index += matches(0).getLength();
+        }
+    }
+
+    function moveBackUtf8Chars(count: Int) {
+        while count > 0 {
+            --index;
+            while (getCurrentContent()~cnt(0) & 0xC0) == 0x80 { --index }
+            --count;
+        }
+    }
+
+    function printIndent() {
+        printIndent(indent);
+    }
+
+    function printIndent(i: Int) {
+        while i-- > 0 Fs.print(output, " ");
+    }
+
+    class Rule {
+        def name: String;
+        def regex: Regex.Matcher;
+        def action: closure (Array[String]);
+
+        handler this~init(regexStr: CharsPtr, action: closure (Array[String])) {
+            this.name = regexStr;
+            this.regex~init(String("^") + regexStr, 1);
+            this.action = action;
+        }
+
+        handler this_type(regexStr: CharsPtr, action: closure (Array[String])): SrdRef[Rule] {
+            def rule: SrdRef[Rule]
+            rule.alloc()~init(regexStr, action);
+            return rule;
+        }
+
+        handler this.run(): Bool {
+            def matches: Array[String] = this.regex.match(getCurrentContent());
+            if matches.getLength() > 0 {
+                index += matches(0).getLength();
+                this.action(matches);
+                return true;
+            }
+            return false;
+        }
+    }
+
+    @expname[main]
+    function start (argCount: Int, args: ptr[array[ptr[array[Char]]]]): Int {
+        if argCount >= 3 {
+            def arg1: String = args~cnt(argCount - 2);
+            def arg2: String = args~cnt(argCount - 1);
+            jammil(arg1, arg2);
+        } else {
+            Console.print("Usage: jameel <source> <dest>\n");
+        }
+        return 0;
+    }
+}
+
+function test (): Bool {
+    use Srl;
+
+    def files: Array[String]({
+        String("sample1"),
+        String("sample2"),
+        String("sample3"),
+    });
+
+    def result: Bool = true;
+    def i: Int;
+    for i = 0, i < files.getLength(), ++i {
+        Console.print("Running Jameel on: %s.alusus\n", files(i).buf);
+        Jameel.jammil(
+            String.format("test/%s.alusus", files(i).buf),
+            String.format("test/%s.testresult.alusus", files(i).buf)
+        );
+
+        def generated: String = Fs.readFile(String.format("test/%s.testresult.alusus", files(i).buf));
+        def expected: String = Fs.readFile(String.format("test/%s.beautified.alusus", files(i).buf));
+
+        if generated == expected {
+            Console.print("Test successful,\n\n");
+            System.exec(String.format("rm test/%s.testresult.alusus", files(i).buf));
+        } else {
+            Console.print("Test failed,\n\n");
+            result = false;
+        }
+    }
+    return result;
+}
+
+if Process.argCount == 4 {
+    def arg1: Srl.String = Process.args~cnt(Process.argCount - 2);
+    def arg2: Srl.String = Process.args~cnt(Process.argCount - 1);
+    Jameel.jammil(arg1, arg2);
+} else if Process.argCount == 3 and Srl.String.isEqual(Process.args~cnt(Process.argCount - 1), "build") {
+    if test() {
+        if Build.genExecutable(Jameel.start~ast, "jameel") {
+          Srl.Console.print("Compilation complete.\n");
+        } else {
+            Srl.System.fail(1, "Compilation failed!");
+        }
+    } else {
+        Srl.System.fail(1, "Automated tests were not successful. Aborting...");
+    }
+} else {
+    Srl.Console.print("Jameel usage: alusus jameel.alusus <source> <dest>\n");
+    Srl.Console.print("Generate executable: alusus jameel.alusus build\n");
+}

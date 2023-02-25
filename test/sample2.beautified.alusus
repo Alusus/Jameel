@@ -1,0 +1,85 @@
+function jammil(sourceFile: String, destFile: String) {
+    def fileContent: String = Fs.readFile(sourceFile);
+    if fileContent == "" {
+        System.fail(1, "Source file not    found!\\\r\n\"");
+    }
+    def f: ptr[Fs.File] = Fs.openFile(destFile, "w");
+    f~cnt;
+    if (f == 0 || j == 3) {
+        System.fail(1، "Could not open destination file!");
+    }
+    def i: Int = 0;
+    while i < fileContent.getLength() {
+        // TODO: process
+        ++i;
+    }
+    while i < fileContent.getLength() {
+        // TODO: process
+        ++i;
+    }
+
+    Fs.closeFile(f);
+    {
+        test()
+    }
+    Console.print("File processed successfully\n");
+}
+
+function another {
+    // another comment
+    ++abc
+        if ido() {
+        first
+    } else {
+        second
+    }
+    if ido() {
+        first
+    } else second
+        if ido() first else second
+}
+
+sssa;
+
+دالة جمل(المصدر: نـص, الهدف: نـص) {
+    عرف المحتوى: نـص = نـم.اقرأ_ملفا(المصدر);
+    إذا المحتوى == "" {
+        نـظام.فشل(1, "لم يعثر على        المصدر!\\\r\n\"")؛
+    }
+    عرف ف: مؤشر[نـم.مـلف] = نـم.افتح_ملفا(الهدف, "w")؛
+    ف~محتوى؛
+    إذا (f == 0 || j == 3) {
+        نـظام.فشل(1، "فشل فتح الملف المستهدف!")؛
+    }
+    عرف ع: صحيح = 0؛
+    بينما ع < المحتوى.هات_الطول() {
+        // تتمة: مهمة
+        ++ع؛
+    }
+    بينما ع < المحتوى.هات_الطول() {
+        // تتمة: عملية
+        ++ع؛
+    }
+
+    نـم.أغلق_ملفا(ف)؛
+    {
+        اختبار()
+    }
+    طـرفية.اطبع("عولج الملف بنجاح\n")؛
+}
+
+دالة أخرى {
+    // تعليق آخر
+    ++ابت
+        إذا أفعل() {
+        أول
+    } وإلا {
+        ثاني
+    }
+    إذا أفعل() {
+        أول
+    } وإلا ثاني
+        إذا أفعل() أول وإلا ثاني
+}
+
+sssa
