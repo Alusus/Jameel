@@ -12,6 +12,7 @@
     def spacesAndNewLinesFollowedByOpeningBrace: Regex.Matcher("^[ \t\n\r]*\\{", 1);
     def elseKeyword: Regex.Matcher(String.format("^[ \t\n\r]*(else|وإلا)%s", nonIdentifierChar.buf), 1);
 
+    // TODO: Fix identifier followed by brace in for statement.
     // TODO: Test block comments.
     // TODO: Test bigger code samples.
 
@@ -23,28 +24,28 @@
         return Array[SrdRef[Rule]]({
             // Comment Lines
             Rule("(//[^\n]*)[ \t]*\n", closure(args: Array[String]) {
-                Fs.print(output, "%s", args(1).buf);
+                printSourceCode(args(1));
                 handleNewLines(1);
             }),
             // String Literals
             Rule("\"([^\"]|\\\\\")*\"", closure(args: Array[String]) {
-                Fs.print(output, args(0).buf);
+                printSourceCode(args(0));
             }),
             // Commas and Colon
             Rule("(,|،|:)[ \t]*", closure(args: Array[String]) {
-                Fs.print(output, "%s ", args(1).buf);
+                printSourceCode(String.format("%s ", args(1).buf));
             }),
             // Unary Operators
             Rule("(--|\\+\\+)[ \t]*", closure(args: Array[String]) {
-                Fs.print(output, args(1).buf);
+                printSourceCode(args(1));
             }),
             // 2 Char Operators
             Rule("(==|!=|<<|>>|&&|\\|\\|)[ \t]*", closure(args: Array[String]) {
-                Fs.print(output, " %s ", args(1).buf);
+                printSourceCode(String.format(" %s ", args(1).buf));
             }),
             // Single Char Operators
             Rule("([-+*/=&|$<>])[ \t]*", closure(args: Array[String]) {
-                Fs.print(output, " %s ", args(1).buf);
+                printSourceCode(String.format(" %s ", args(1).buf));
             }),
             // Block Statements
             Rule(
@@ -52,14 +53,14 @@
                 closure(args: Array[String]) {
                     moveBackUtf8Chars(1);
                     contextStack(contextStack.getLength() - 1) = "block";
-                    Fs.print(output, "%s ", args(1).buf);
+                    printSourceCode(String.format("%s ", args(1).buf));
                 }
             ),
             // If/While Statements
             Rule(String.format("(if|while|إذا|بينما)%s", nonIdentifierChar.buf), closure(args: Array[String]) {
                 moveBackUtf8Chars(1);
                 contextStack(contextStack.getLength() - 1) = "if";
-                Fs.print(output, "%s ", args(1).buf);
+                printSourceCode(String.format("%s ", args(1).buf));
             }),
             // New Lines
             Rule("\n", closure(args: Array[String]) {
@@ -72,7 +73,7 @@
                     if spacesAndNewLinesFollowedByClosingBrace.match(getCurrentContent()).getLength() != 0 {
                         skip(spacesAndNewLines);
                     } else {
-                        Fs.print(output, "\n");
+                        printSourceCode("\n");
                         def result: Array[String] = nonEmptyLine.match(getCurrentContent());
                         if result.getLength() == 0 handleNewLines()
                         else if result(1) == ")" {
@@ -89,21 +90,21 @@
             // Semicolon
             Rule("(;|؛)", closure(args: Array[String]) {
                 contextStack(contextStack.getLength() - 1) = "";
-                Fs.print(output, args(0));
+                printSourceCode(args(0));
                 handleNewLines(1);
             }),
             // Parenthesis
             Rule("(\\[|\\()", closure(args: Array[String]) {
-                Fs.print(output, args(0));
+                printSourceCode(args(0));
                 contextStack.add(String());
             }),
             Rule("(\\]|\\))", closure(args: Array[String]) {
-                Fs.print(output, args(0));
+                printSourceCode(args(0));
                 if contextStack.getLength() > 1 {
                     contextStack.remove(contextStack.getLength() - 1);
                 }
                 if spacesFollowedByIdentifier.match(getCurrentContent()).getLength() != 0 {
-                    Fs.print(output, " ");
+                    printSourceCode(" ");
                 }
             }),
             // Braces
@@ -112,8 +113,8 @@
                 if (
                     contextStack(contextStack.getLength() - 1) == "block" ||
                     contextStack(contextStack.getLength() - 1) == "if"
-                ) Fs.print(output, " ");
-                Fs.print(output, "{");
+                ) printSourceCode(" ");
+                printSourceCode("{");
                 indent += 4;
                 handleNewLines(1);
                 // printIndent();
@@ -123,12 +124,12 @@
                 if contextStack.getLength() > 1 {
                     contextStack.remove(contextStack.getLength() - 1);
                 }
-                Fs.print(output, "\n");
+                printSourceCode("\n");
                 indent -= 4;
                 printIndent();
-                Fs.print(output, "}");
+                printSourceCode("}");
                 if elseKeyword.match(getCurrentContent()).getLength() != 0 {
-                    Fs.print(output, " ");
+                    printSourceCode(" ");
                     skip(spacesAndNewLines);
                 } else {
                     if contextStack(contextStack.getLength() - 1) == "block" {
@@ -140,7 +141,7 @@
             }),
             // Consecutive Words
             Rule(String.format("(%s+)[ \t]+%s", identifierChar.buf, identifierChar.buf), closure(args: Array[String]) {
-                Fs.print(output, "%s ", args(1).buf);
+                printSourceCode(String.format("%s ", args(1).buf));
                 moveBackUtf8Chars(1);
             }),
             // Spaces
@@ -160,14 +161,14 @@
                 def i: Int;
                 for i = 0, i < match(0).getLength(), ++i {
                     if match(0)(i) == '\n' {
-                        Fs.print(output, "\n");
+                        printSourceCode("\n");
                         --minNewLines;
                     }
                 }
                 index += match(0).getLength();
             }
             while (minNewLines > 0) {
-                Fs.print(output, "\n");
+                printSourceCode("\n");
                 --minNewLines;
             }
             printIndent();

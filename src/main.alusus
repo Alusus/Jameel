@@ -29,9 +29,11 @@ import "rules";
             System.fail(1, "Source file not found!");
         }
 
-        output = Fs.openFile(destFile, "w");
-        if output == 0 {
-            System.fail(1, "Could not open destination file!");
+        if destFile != "" {
+            output = Fs.openFile(destFile, "w");
+            if output == 0 {
+                System.fail(1, "Could not open destination file!");
+            }
         }
 
         while index < fileContent.getLength() {
@@ -39,12 +41,16 @@ import "rules";
             for j = 0, j < rules.getLength(), ++j {
                 if rules(j).run() continue 2;
             }
-            Fs.print(output, "%c", fileContent(index));
+            printSourceCode(String.format("%c", fileContent(index)));
             ++index;
         }
 
-        Fs.closeFile(output);
-        Console.print("File processed successfully\n");
+        if output != 0 Fs.closeFile(output);
+    }
+
+    function printSourceCode(str: CharsPtr) {
+        if output == 0 Console.print(str)
+        else Fs.print(output, str);
     }
 
     function getCurrentContent(): CharsPtr {
@@ -71,7 +77,7 @@ import "rules";
     }
 
     function printIndent(i: Int) {
-        while i-- > 0 Fs.print(output, " ");
+        while i-- > 0 printSourceCode(" ");
     }
 
     class Rule {
@@ -104,12 +110,13 @@ import "rules";
 
     @expname[main]
     function start (argCount: Int, args: ptr[array[ptr[array[Char]]]]): Int {
-        if argCount >= 3 {
-            def arg1: String = args~cnt(argCount - 2);
-            def arg2: String = args~cnt(argCount - 1);
-            jammil(arg1, arg2);
+        if argCount == 2 {
+            jammil(String(args~cnt(argCount - 1)), String());
+        } else if argCount == 3 {
+            jammil(String(args~cnt(argCount - 2)), String(args~cnt(argCount - 1)));
         } else {
-            Console.print("Usage: jameel <source> <dest>\n");
+            Console.print("Usage: jameel <source>\n");
+            Console.print("       jameel <source> <dest>\n");
         }
         return 0;
     }
@@ -147,21 +154,32 @@ function test (): Bool {
     return result;
 }
 
-if Process.argCount == 4 {
-    def arg1: Srl.String = Process.args~cnt(Process.argCount - 2);
-    def arg2: Srl.String = Process.args~cnt(Process.argCount - 1);
-    Jameel.jammil(arg1, arg2);
-} else if Process.argCount == 3 and Srl.String.isEqual(Process.args~cnt(Process.argCount - 1), "build") {
+function generateExecutable() {
     if test() {
         if Build.genExecutable(Jameel.start~ast, "jameel") {
-          Srl.Console.print("Compilation complete.\n");
+          Srl.Console.print("Build complete.\n");
         } else {
-            Srl.System.fail(1, "Compilation failed!");
+            Srl.System.fail(1, "Build failed!");
         }
     } else {
         Srl.System.fail(1, "Automated tests were not successful. Aborting...");
     }
-} else {
-    Srl.Console.print("Jameel usage: alusus jameel.alusus <source> <dest>\n");
-    Srl.Console.print("Generate executable: alusus jameel.alusus build\n");
 }
+
+if Process.argCount == 3 || Process.argCount == 4 {
+    def arg1: Srl.String = Process.args~cnt(Process.argCount - 2);
+    def arg2: Srl.String = Process.args~cnt(Process.argCount - 1);
+    if Process.argCount == 3 && arg2 == "--build" {
+        generateExecutable();
+    } else if Process.argCount == 3 {
+        Jameel.jammil(arg2, Srl.String());
+    } else {
+        Jameel.jammil(arg1, arg2);
+    }
+} else {
+    Srl.Console.print("Jameel usage: alusus jameel.alusus <source>\n");
+    Srl.Console.print("              alusus jameel.alusus <source> <dest>\n");
+    Srl.Console.print("Generate executable: alusus jameel.alusus --build\n");
+}
+
+// TODO: Support adding other languages.
