@@ -33,3 +33,19 @@ firstArg,
 secondArg
 )
 }
+
+module Mod1 {
+/*
+    this is a     test comment
+    */
+function third {
+for i=0,i<5,++i{}
+}
+
+    /*
+     * this is a     test comment
+     */
+function fourth {
+    for i = 0, i < 5 /* some comment */ sar, ++i{}
+}
+}

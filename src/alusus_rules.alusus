@@ -13,8 +13,6 @@
         def spacesAndNewLinesFollowedByOpeningBrace: Regex.Matcher("^[ \t\n\r]*\\{", 1);
         def elseKeyword: Regex.Matcher(String.format("^[ \t\n\r]*(else|وإلا)%s", nonIdentifierChar.buf), 1);
 
-        // TODO: Fix identifier followed by brace in for statement.
-        // TODO: Test block comments.
         // TODO: Test bigger code samples.
 
         function getRules (): Array[SrdRef[Rule]] {
@@ -28,46 +26,69 @@
                     printSourceCode(args(1));
                     handleNewLines(1);
                 }),
+                // Comment Blocks
+                Rule("([ \t]*/\\*)", closure(args: Array[String]) {
+                    printSourceCode(args(1));
+                    contextStack.add(String("comment"));
+                }),
+                Rule("(\\*/)", closure(args: Array[String]) {
+                    popContextStack(contextStack);
+                    printSourceCode(args(1));
+                    printSourceCode(" ");
+                    handleNewLines();
+                }),
                 // String Literals
                 Rule("\"([^\"]|\\\\\")*\"", closure(args: Array[String]) {
                     printSourceCode(args(0));
                 }),
                 // Commas and Colon
                 Rule("(,|،|:)[ \t]*", closure(args: Array[String]) {
-                    printSourceCode(String.format("%s ", args(1).buf));
+                    if getCurrentContext(contextStack) == "comment" printSourceCode(args(0))
+                    else printSourceCode(String.format("%s ", args(1).buf));
                 }),
                 // Unary Operators
                 Rule("(--|\\+\\+)[ \t]*", closure(args: Array[String]) {
-                    printSourceCode(args(1));
+                    if getCurrentContext(contextStack) == "comment" printSourceCode(args(0))
+                    else printSourceCode(args(1));
                 }),
                 // 2 Char Operators
                 Rule("(==|!=|<<|>>|&&|\\|\\|)[ \t]*", closure(args: Array[String]) {
-                    printSourceCode(String.format(" %s ", args(1).buf));
+                    if getCurrentContext(contextStack) == "comment" printSourceCode(args(0))
+                    else printSourceCode(String.format(" %s ", args(1).buf));
                 }),
                 // Single Char Operators
                 Rule("([-+*/=&|$<>])[ \t]*", closure(args: Array[String]) {
-                    printSourceCode(String.format(" %s ", args(1).buf));
+                    if getCurrentContext(contextStack) == "comment" printSourceCode(args(0))
+                    else printSourceCode(String.format(" %s ", args(1).buf));
                 }),
                 // Block Statements
                 Rule(
                     String.format("(module|class|function|handler|دالة|وحدة|عملية)%s", nonIdentifierChar.buf),
                     closure(args: Array[String]) {
-                        moveBackUtf8Chars(1);
-                        contextStack(contextStack.getLength() - 1) = "block";
-                        printSourceCode(String.format("%s ", args(1).buf));
+                        if getCurrentContext(contextStack) == "comment" printSourceCode(args(0))
+                        else {
+                            moveBackUtf8Chars(1);
+                            setCurrentContext(contextStack, "block");
+                            printSourceCode(String.format("%s ", args(1).buf));
+                        }
                     }
                 ),
                 // If/While Statements
-                Rule(String.format("(if|while|إذا|بينما)%s", nonIdentifierChar.buf), closure(args: Array[String]) {
-                    moveBackUtf8Chars(1);
-                    contextStack(contextStack.getLength() - 1) = "if";
-                    printSourceCode(String.format("%s ", args(1).buf));
+                Rule(String.format("(if|while|for|إذا|بينما|لكل)%s", nonIdentifierChar.buf), closure(args: Array[String]) {
+                    if getCurrentContext(contextStack) == "comment" printSourceCode(args(0))
+                    else {
+                        moveBackUtf8Chars(1);
+                        setCurrentContext(contextStack, "if");
+                        printSourceCode(String.format("%s ", args(1).buf));
+                    }
                 }),
                 // New Lines
                 Rule("\n", closure(args: Array[String]) {
-                    if (
-                        contextStack(contextStack.getLength() - 1) != "block" &&
-                        contextStack(contextStack.getLength() - 1) != "if"
+                    if getCurrentContext(contextStack) == "comment" {
+                        printSourceCode("\n");
+                    } else if (
+                        getCurrentContext(contextStack) != "block" &&
+                        getCurrentContext(contextStack) != "if"
                     ) or (
                         spacesAndNewLinesFollowedByOpeningBrace.match(getCurrentContent()).getLength() == 0
                     ) {
@@ -90,64 +111,89 @@
                 }),
                 // Semicolon
                 Rule("(;|؛)", closure(args: Array[String]) {
-                    contextStack(contextStack.getLength() - 1) = "";
-                    printSourceCode(args(0));
-                    handleNewLines(1);
+                    if getCurrentContext(contextStack) == "comment" printSourceCode(args(0))
+                    else {
+                        setCurrentContext(contextStack, "");
+                        printSourceCode(args(0));
+                        handleNewLines(1);
+                    }
                 }),
                 // Parenthesis
                 Rule("(\\[|\\()", closure(args: Array[String]) {
                     printSourceCode(args(0));
-                    contextStack.add(String());
+                    if getCurrentContext(contextStack) != "comment" contextStack.add(String());
                 }),
                 Rule("(\\]|\\))", closure(args: Array[String]) {
                     printSourceCode(args(0));
-                    if contextStack.getLength() > 1 {
-                        contextStack.remove(contextStack.getLength() - 1);
-                    }
-                    if spacesFollowedByIdentifier.match(getCurrentContent()).getLength() != 0 {
-                        printSourceCode(" ");
+                    if getCurrentContext(contextStack) != "comment" {
+                        popContextStack(contextStack);
+                        if spacesFollowedByIdentifier.match(getCurrentContent()).getLength() != 0 {
+                            printSourceCode(" ");
+                        }
                     }
                 }),
                 // Braces
                 Rule("\\{", closure(args: Array[String]) {
-                    skip(spacesAndNewLines);
-                    if (
-                        contextStack(contextStack.getLength() - 1) == "block" ||
-                        contextStack(contextStack.getLength() - 1) == "if"
-                    ) printSourceCode(" ");
-                    printSourceCode("{");
-                    indent += 4;
-                    handleNewLines(1);
-                    contextStack.add(String());
+                    if getCurrentContext(contextStack) == "comment" printSourceCode(args(0))
+                    else {
+                        skip(spacesAndNewLines);
+                        if (
+                            getCurrentContext(contextStack) == "block" ||
+                            getCurrentContext(contextStack) == "if"
+                        ) printSourceCode(" ");
+                        printSourceCode("{");
+                        indent += 4;
+                        handleNewLines(1);
+                        contextStack.add(String());
+                    }
                 }),
                 Rule("\\}", closure(args: Array[String]) {
-                    if contextStack.getLength() > 1 {
-                        contextStack.remove(contextStack.getLength() - 1);
-                    }
-                    printSourceCode("\n");
-                    indent -= 4;
-                    printIndent();
-                    printSourceCode("}");
-                    if elseKeyword.match(getCurrentContent()).getLength() != 0 {
-                        printSourceCode(" ");
-                        skip(spacesAndNewLines);
-                    } else {
-                        if contextStack(contextStack.getLength() - 1) == "block" {
-                            handleNewLines(2);
+                    if getCurrentContext(contextStack) == "comment" printSourceCode(args(0))
+                    else {
+                        popContextStack(contextStack);
+                        printSourceCode("\n");
+                        indent -= 4;
+                        printIndent();
+                        printSourceCode("}");
+                        if elseKeyword.match(getCurrentContent()).getLength() != 0 {
+                            printSourceCode(" ");
+                            skip(spacesAndNewLines);
                         } else {
-                            handleNewLines(1);
+                            if getCurrentContext(contextStack) == "block" {
+                                handleNewLines(2);
+                            } else {
+                                handleNewLines(1);
+                            }
                         }
                     }
                 }),
                 // Consecutive Words
                 Rule(String.format("(%s+)[ \t]+%s", identifierChar.buf, identifierChar.buf), closure(args: Array[String]) {
-                    printSourceCode(String.format("%s ", args(1).buf));
-                    moveBackUtf8Chars(1);
+                    if getCurrentContext(contextStack) == "comment" printSourceCode(args(0))
+                    else {
+                        printSourceCode(String.format("%s ", args(1).buf));
+                        moveBackUtf8Chars(1);
+                    }
                 }),
                 // Spaces
                 Rule("[ \t]+", closure(args: Array[String]) {
+                    if getCurrentContext(contextStack) == "comment" printSourceCode(args(0))
                 }),
             });
+        }
+
+        function popContextStack(stack: SrdRef[Array[String]]) {
+            if stack.getLength() > 1 {
+                stack.remove(stack.getLength() - 1);
+            }
+        }
+
+        function setCurrentContext(stack: SrdRef[Array[String]], val: CharsPtr) {
+            stack(stack.getLength() - 1) = val;
+        }
+
+        function getCurrentContext(stack: SrdRef[Array[String]]): String {
+            return stack(stack.getLength() - 1);
         }
 
         function handleNewLines () {
@@ -155,13 +201,17 @@
         }
 
         function handleNewLines (minNewLines: Int) {
-            if spacesAndNewLinesFollowedByClosingBrace.match(getCurrentContent()).getLength() == 0 {
+            if spacesAndNewLinesFollowedByClosingBrace.match(getCurrentContent()).getLength() != 0 {
+                skip(spacesAndNewLines);
+            } else {
                 def match: Array[String] = spacesAndNewLines.match(getCurrentContent());
+                def indentNeeded: Bool = false;
                 if match.getLength() > 0 {
                     def i: Int;
                     for i = 0, i < match(0).getLength(), ++i {
                         if match(0)(i) == '\n' {
                             printSourceCode("\n");
+                            indentNeeded = true;
                             --minNewLines;
                         }
                     }
@@ -169,11 +219,10 @@
                 }
                 while (minNewLines > 0) {
                     printSourceCode("\n");
+                    indentNeeded = true;
                     --minNewLines;
                 }
-                printIndent();
-            } else {
-                skip(spacesAndNewLines);
+                if indentNeeded printIndent();
             }
         }
     }
