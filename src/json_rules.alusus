@@ -1,0 +1,44 @@
+@merge module Jameel {
+    module JsonRules {
+        def spacesAndNewLines: Regex.Matcher("^[ \t\n\r]+", 1);
+
+        function getRules (): Array[SrdRef[Rule]] {
+            def contextStack: SrdRef[Array[String]];
+            contextStack.construct();
+            contextStack.add({ String() });
+
+            return Array[SrdRef[Rule]]({
+                // String Literals
+                Rule("\"([^\"]|\\\\\")*\"", closure(args: Array[String]) {
+                    printSourceCode(args(0));
+                }),
+                // Comma
+                Rule("(,)[ \t\n\r]*", closure(args: Array[String]) {
+                    printSourceCode(",\n");
+                    printIndent();
+                }),
+                // Colon
+                Rule("(:)[ \t\n\r]*", closure(args: Array[String]) {
+                    printSourceCode(": ");
+                }),
+                // Braces
+                Rule("(\\{|\\[)", closure(args: Array[String]) {
+                    skip(spacesAndNewLines);
+                    printSourceCode(args(0));
+                    printSourceCode("\n");
+                    indent += 4;
+                    printIndent();
+                }),
+                Rule("(\\}|\\])", closure(args: Array[String]) {
+                    printSourceCode("\n");
+                    indent -= 4;
+                    printIndent();
+                    printSourceCode(args(0));
+                }),
+                // Spaces
+                Rule("[ \t\n\r]+", closure(args: Array[String]) {
+                }),
+            });
+        }
+    }
+}

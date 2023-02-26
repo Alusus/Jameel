@@ -2,12 +2,14 @@ import "Srl/Console";
 import "Srl/Fs";
 import "Srl/String";
 import "Srl/Array";
+import "Srl/Map";
 import "Srl/Regex";
 import "Srl/refs";
 import "Srl/System";
 import "closure";
 import "Build";
-import "rules";
+import "alusus_rules";
+import "json_rules";
 
 @merge module Jameel {
     use Srl;
@@ -17,12 +19,21 @@ import "rules";
     def index: Int;
     def indent: Int;
 
-    function jammil (sourceFile: String, destFile: String) {
+    function getLanguageRules(lang: String): Array[SrdRef[Rule]] {
+        def rules: Array[SrdRef[Rule]];
+        if lang == "alusus" rules = AlususRules.getRules()
+        else if lang == "json" rules = JsonRules.getRules()
+        else {
+            System.fail(1, "Invalid language option");
+        }
+        return rules;
+    }
+
+    function beautify (rules: Array[SrdRef[Rule]], sourceFile: String, destFile: String) {
         fileContent.clear();
         output = 0;
         index = 0;
         indent = 0;
-        def rules: Array[SrdRef[Rule]] = getAlususRules();
 
         fileContent = Fs.readFile(sourceFile);
         if fileContent == "" {
@@ -108,15 +119,49 @@ import "rules";
         }
     }
 
+    function parseArgs (argCount: Int, args: ptr[array[CharsPtr]]): Map[String, String] {
+        def result: Map[String, String];
+        // Default to Alusus language.
+        result(String("lang")) = "alusus";
+
+        def i: Int;
+        def argIndex: Int = 1;
+        for i = 0, i < argCount, ++i {
+            def str: String = args~cnt(i);
+            if str == "--build" {
+                result(String("build")) = "true";
+            } else if str == "--lang" {
+                if i >= argCount - 1 return Map[String, String]();
+                result(String("lang")) = String(args~cnt(++i));
+            } else if str(0) == '-' and str(1) == '-' {
+                return Map[String, String]();
+            } else {
+                if argIndex == 1 result(String("arg1")) = str
+                else if argIndex == 2 result(String("arg2")) = str
+                else return Map[String, String]();
+                ++argIndex;
+            }
+        }
+        if result(String("build")) == "" and result(String("arg1")) == "" return Map[String, String]()
+        if result(String("build")) != "" and result(String("arg1")) != "" return Map[String, String]()
+        else return result;
+    }
+
     @expname[main]
-    function start (argCount: Int, args: ptr[array[ptr[array[Char]]]]): Int {
-        if argCount == 2 {
-            jammil(String(args~cnt(argCount - 1)), String());
-        } else if argCount == 3 {
-            jammil(String(args~cnt(argCount - 2)), String(args~cnt(argCount - 1)));
+    function start (argCount: Int, args: ptr[array[CharsPtr]]): Int {
+        def parsedArgs: Map[String, String] = parseArgs(argCount - 1, args + 1);
+        if parsedArgs(String("arg1")) == "" {
+            Console.print("Usage: jameel [options] <source> [<dest>]\n");
+            Console.print("If <dest> is not provided the result will be printed to the standard output.\n");
+            Console.print("Options:\n");
+            Console.print("    --lang <language>    The language of the provided file\n");
+            Console.print("                         Available lang options: alusus, json\n");
         } else {
-            Console.print("Usage: jameel <source>\n");
-            Console.print("       jameel <source> <dest>\n");
+            beautify(
+                getLanguageRules(parsedArgs(String("lang"))),
+                parsedArgs(String("arg1")),
+                parsedArgs(String("arg2"))
+            );
         }
         return 0;
     }
@@ -125,27 +170,32 @@ import "rules";
 function test (): Bool {
     use Srl;
 
-    def files: Array[String]({
-        String("sample1"),
-        String("sample2"),
-        String("sample3"),
-    });
+    def files: Map[String, String];
+    files.set(String("sample1"), String("alusus"));
+    files.set(String("sample2"), String("alusus"));
+    files.set(String("sample3"), String("alusus"));
+    files.set(String("sample4"), String("json"));
 
     def result: Bool = true;
     def i: Int;
     for i = 0, i < files.getLength(), ++i {
-        Console.print("Running Jameel on: %s.alusus\n", files(i).buf);
-        Jameel.jammil(
-            String.format("test/%s.alusus", files(i).buf),
-            String.format("test/%s.testresult.alusus", files(i).buf)
+        Console.print("Running Jameel on: %s.%s\n", files.keyAt(i).buf, files.valAt(i).buf);
+        Jameel.beautify(
+            Jameel.getLanguageRules(files.valAt(i)),
+            String.format("test/%s.%s", files.keyAt(i).buf, files.valAt(i).buf),
+            String.format("test/%s.testresult.%s", files.keyAt(i).buf, files.valAt(i).buf)
         );
 
-        def generated: String = Fs.readFile(String.format("test/%s.testresult.alusus", files(i).buf));
-        def expected: String = Fs.readFile(String.format("test/%s.beautified.alusus", files(i).buf));
+        def generated: String = Fs.readFile(
+            String.format("test/%s.testresult.%s", files.keyAt(i).buf, files.valAt(i).buf)
+        );
+        def expected: String = Fs.readFile(
+            String.format("test/%s.beautified.%s", files.keyAt(i).buf, files.valAt(i).buf)
+        );
 
         if generated == expected {
             Console.print("Test successful,\n\n");
-            System.exec(String.format("rm test/%s.testresult.alusus", files(i).buf));
+            System.exec(String.format("rm test/%s.testresult.%s", files.keyAt(i).buf, files.valAt(i).buf));
         } else {
             Console.print("Test failed,\n\n");
             result = false;
@@ -166,20 +216,20 @@ function generateExecutable() {
     }
 }
 
-if Process.argCount == 3 || Process.argCount == 4 {
-    def arg1: Srl.String = Process.args~cnt(Process.argCount - 2);
-    def arg2: Srl.String = Process.args~cnt(Process.argCount - 1);
-    if Process.argCount == 3 && arg2 == "--build" {
-        generateExecutable();
-    } else if Process.argCount == 3 {
-        Jameel.jammil(arg2, Srl.String());
-    } else {
-        Jameel.jammil(arg1, arg2);
-    }
+def parsedArgs: Srl.Map[Srl.String, Srl.String] = Jameel.parseArgs(Process.argCount - 2, Process.args + 2);
+if parsedArgs.getLength() == 0 {
+    Srl.Console.print("Jameel usage: alusus jameel.alusus [options] <source> [<dest>]\n");
+    Srl.Console.print("If <dest> is not provided the result will be printed to the standard output.\n");
+    Srl.Console.print("Options:\n");
+    Srl.Console.print("    --lang <language>    The language of the provided file\n");
+    Srl.Console.print("                         Available lang options: alusus, json\n");
+    Srl.Console.print("    --build              Generate an executable version of jameel.\n");
+} else if parsedArgs(Srl.String("build")) == "true" {
+    generateExecutable();
 } else {
-    Srl.Console.print("Jameel usage: alusus jameel.alusus <source>\n");
-    Srl.Console.print("              alusus jameel.alusus <source> <dest>\n");
-    Srl.Console.print("Generate executable: alusus jameel.alusus --build\n");
+    Jameel.beautify(
+        Jameel.getLanguageRules(parsedArgs(Srl.String("lang"))),
+        parsedArgs(Srl.String("arg1")),
+        parsedArgs(Srl.String("arg2"))
+    );
 }
-
-// TODO: Support adding other languages.
