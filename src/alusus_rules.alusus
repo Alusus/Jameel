@@ -106,6 +106,14 @@
                         printSourceCode(String.format("%s ", args(1).buf));
                     }
                 }),
+                // Modifiers
+                Rule(String.format("@%s+", identifierChar.buf), closure(args: Array[String]) {
+                    if getCurrentContext(contextStack) == "comment" printSourceCode(args(0))
+                    else {
+                        setCurrentContext(contextStack, "modifier");
+                        printSourceCode(args(0));
+                    }
+                }),
                 // New Lines
                 Rule("\n", closure(args: Array[String]) {
                     if getCurrentContext(contextStack) == "comment" {
@@ -120,13 +128,18 @@
                             skip(spacesAndNewLines);
                         } else {
                             printSourceCode("\n");
-                            def result: Array[String] = nonEmptyLine.match(getCurrentContent());
-                            if result.getLength() == 0 handleNewLines(contextStack, 0)
-                            else if isNext(spacesAndNewLinesThenElseKeyword) {
+                            if getCurrentContext(contextStack) == "modifier" {
                                 printIndent(indent);
                                 skip(spacesAndNewLines);
                             } else {
-                                printIndent(indent + 4);
+                                def result: Array[String] = nonEmptyLine.match(getCurrentContent());
+                                if result.getLength() == 0 handleNewLines(contextStack, 0)
+                                else if isNext(spacesAndNewLinesThenElseKeyword) {
+                                    printIndent(indent);
+                                    skip(spacesAndNewLines);
+                                } else {
+                                    printIndent(indent + 4);
+                                }
                             }
                         }
                     }

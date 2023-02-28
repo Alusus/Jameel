@@ -71,3 +71,14 @@ function three {
 function four {
 }
 
+@mod1
+function five {
+}
+
+@mod2["abc"]
+function six {
+}
+
+@mod3[abc] function seven {
+}
+
