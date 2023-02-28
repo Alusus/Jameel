@@ -16,9 +16,7 @@
         def spacesAndNewLinesThenClosingBrace: Regex.Matcher("^[ \t\n\r]*\\}", 1);
         def spacesAndNewLinesThenOpeningBrace: Regex.Matcher("^[ \t\n\r]*\\{", 1);
         def spacesAndNewLinesThenElseKeyword: Regex.Matcher(String.format("^[ \t\n\r]*(else|وإلا)%s", nonIdentifierChar.buf), 1);
-        def spacesAndNewLinesThenSemiColon: Regex.Matcher("^[ \t\n\r]*(;|؛)", 1);
-
-        // TODO: Test bigger code samples.
+        def spacesAndNewLinesThenCommaOrSemiColon: Regex.Matcher("^[ \t\n\r]*(;|؛|,|،)", 1);
 
         function getRules (): Array[SrdRef[Rule]] {
             def contextStack: SrdRef[Array[Context]];
@@ -230,9 +228,9 @@
                         if isNext(spacesAndNewLinesThenElseKeyword) {
                             printSourceCode(" ");
                             skip(spacesAndNewLines);
-                        } else if isNext(spacesAndNewLinesThenSemiColon) {
+                        } else if isNext(spacesAndNewLinesThenCommaOrSemiColon) {
                             if getCurrentContext(contextStack) == "block" {
-                                skip(spacesAndNewLinesThenSemiColon);
+                                skip(spacesAndNewLinesThenCommaOrSemiColon);
                                 handleNewLines(contextStack, 2);
                             } else {
                                 skip(spacesAndNewLines);

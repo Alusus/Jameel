@@ -52,6 +52,16 @@ c,
 
 fcall({{a,b,c}});
 
+fcall({{a,b,c},{d,e,f}});
+
+fcall({{a,b,c},
+{d,e,f}});
+
+fcall({
+{a,
+b,c},{d,
+e,f}});
+
 if true {
 };
 
