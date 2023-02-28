@@ -30,7 +30,7 @@ function another {
         .f2();
 
     dosomething(
-        firstArg, 
+        firstArg,
         secondArg
     )
 }

@@ -75,6 +75,11 @@ import "json_rules";
         }
     }
 
+    function isNext(regex: ref[Regex.Matcher]): Bool {
+        if regex~ptr == 0 return false;
+        return regex.match(getCurrentContent()).getLength() != 0;
+    }
+
     function moveBackUtf8Chars(count: Int) {
         while count > 0 {
             --index;
@@ -174,7 +179,8 @@ function test (): Bool {
     files.set(String("sample1"), String("alusus"));
     files.set(String("sample2"), String("alusus"));
     files.set(String("sample3"), String("alusus"));
-    files.set(String("sample4"), String("json"));
+    files.set(String("sample4"), String("alusus"));
+    files.set(String("sample5"), String("json"));
 
     def result: Bool = true;
     def i: Int;

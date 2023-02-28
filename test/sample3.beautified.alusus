@@ -19,10 +19,8 @@ function jammil(sourceFile: String, destFile: String) {
     }
 
     Fs.closeFile(f);
-    {
-        test()
-    }
-    Console.print("File processed successfully\n");
+    { test() }
+        Console.print("File processed successfully\n");
 }
 
 function another {
@@ -75,10 +73,8 @@ sssa;
     }
 
     نـم.أغلق_ملفا(ف)؛
-    {
-        اختبار()
-    }
-    طـرفية.اطبع("عولج الملف بنجاح\n")؛
+    { اختبار() }
+        طـرفية.اطبع("عولج الملف بنجاح\n")؛
 }
 
 دالة أخرى {

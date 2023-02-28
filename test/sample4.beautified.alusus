@@ -1,0 +1,73 @@
+function one {
+    fcall(a, b, c);
+    fcall(
+        a, b, c
+    );
+    fcall(
+        a, b,
+        c
+    );
+
+    fcall(
+        a, b,
+        c
+    );
+
+    fcall(a, b,
+        c);
+
+    fcall(a, b,
+        c);
+
+    fcall({ a, b, c });
+    fcall({ });
+    fcall({
+    });
+    fcall(
+        { a, b, c }
+    );
+
+    fcall(
+        {
+            a, b, c
+        }
+    );
+
+    fcall({
+        a, b, c
+    });
+
+    fcall({
+        a,
+        b, c
+    });
+
+    fcall({
+        a,
+        b,
+        c,
+    });
+
+    fcall({
+        { a, b, c }
+    });
+
+    if true {
+    };
+
+    if true {
+    };
+}
+
+function two {
+}
+
+function three {
+    fcall(
+        a, b, c
+    );
+}
+
+function four {
+}
+
