@@ -1,7 +1,7 @@
 function jammil(sourceFile: String, destFile: String) {
     def fileContent: String = Fs.readFile(sourceFile);
     if fileContent == "" {
-        System.fail(1, "Source file not    found!\\\r\n\"");
+        System.fail(1, "Source file not    %s found!\\\r\n\"");
     }
     def f: ptr[Fs.File] = Fs.openFile(destFile, "w");
     f~cnt;

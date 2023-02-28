@@ -60,8 +60,8 @@ import "json_rules";
     }
 
     function printSourceCode(str: CharsPtr) {
-        if output == 0 Console.print(str)
-        else Fs.print(output, str);
+        if output == 0 Console.print("%s", str)
+        else Fs.print(output, "%s", str);
     }
 
     function getCurrentContent(): CharsPtr {
