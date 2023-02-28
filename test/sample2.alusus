@@ -1,4 +1,4 @@
-function jammil (sourceFile: String, destFile: String) {def fileContent: String = Fs.readFile(sourceFile);if fileContent==""{System.fail(1         ,     	            "Source file not    %s found!\\\r\n\"");
+function jammil (sourceFile: String, destFile: String){def fileContent: String = Fs.readFile(sourceFile);if fileContent==""{System.fail(1         ,     	            "Source file not    %s found!\\\r\n\"");
 }def f: ptr[Fs.File] = Fs.openFile(destFile,"w");
 f~cnt;
 if(f==0||j==3){System.fail(1 ،  "Could not open destination file!");}
@@ -13,7 +13,7 @@ while i < fileContent.getLength()
 Fs.closeFile(f);
 {test()}
 Console.print("File processed successfully\n");
-} function another{
+} func another(ptr[int]){
 // another comment
     ++abc
 if ido(){first}else{second}

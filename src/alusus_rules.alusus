@@ -87,7 +87,7 @@
                 }),
                 // Block Statements
                 Rule(
-                    String.format("(module|class|function|handler|دالة|وحدة|عملية)%s", nonIdentifierChar.buf),
+                    String.format("(module|class|function|func|handler|دالة|وحدة|عملية)%s", nonIdentifierChar.buf),
                     closure(args: Array[String]) {
                         if getCurrentContext(contextStack) == "comment" printSourceCode(args(0))
                         else {
@@ -107,11 +107,12 @@
                     }
                 }),
                 // Modifiers
-                Rule(String.format("@%s+", identifierChar.buf), closure(args: Array[String]) {
+                Rule(String.format("@%s", identifierChar.buf), closure(args: Array[String]) {
                     if getCurrentContext(contextStack) == "comment" printSourceCode(args(0))
                     else {
                         setCurrentContext(contextStack, "modifier");
-                        printSourceCode(args(0));
+                        printSourceCode("@");
+                        moveBackUtf8Chars(1);
                     }
                 }),
                 // New Lines

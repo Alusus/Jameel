@@ -23,7 +23,7 @@ function jammil(sourceFile: String, destFile: String) {
         Console.print("File processed successfully\n");
 }
 
-function another {
+func another(ptr[int]) {
     // another comment
     ++abc
         if ido() {

@@ -73,5 +73,6 @@ function four{
 function five{}
 
 @mod2[   "abc"]
-function six { }
+func six(){ }
 @mod3[abc ]     function seven {}
+@mod4    function eight{}
