@@ -5,7 +5,7 @@
         def identifierChar: String(
             "([a-zA-Z0-9_]|ا|ب|ت|ث|ج|ح|خ|د|ذ|ر|ز|س|ش|ص|ض|ط|ظ|ع|غ|ف|ق|ك|ل|م|ن|ه|و|ي|ـ|ى|ؤ|ئ|ء|أ|إ|آ|ّ|َ|ً|ُ|ٌ|ِ|ٍ|ْ)"
         );
-        def nonIdentifierChar: String("[ \t\n\r\\(\\)\\{\\}+=!@#$%^&*\\[\\]|,/-]");
+        def nonIdentifierChar: String("([ \t\n\r\\(\\)\\{\\}+=!@#$%^&*\\[\\]|,/-]|×|÷)");
         def spacesThenIdentifier: Regex.Matcher(String("^[ \t]*") + identifierChar, 1);
         def spacesAndNewLines: Regex.Matcher("^[ \t\n\r]+", 1);
         def emptyLine: Regex.Matcher("^[ \t]*([\n\r])", 1);
@@ -17,6 +17,11 @@
         def spacesAndNewLinesThenOpeningBrace: Regex.Matcher("^[ \t\n\r]*\\{", 1);
         def spacesAndNewLinesThenElseKeyword: Regex.Matcher(String.format("^[ \t\n\r]*(else|وإلا)%s", nonIdentifierChar.buf), 1);
         def spacesAndNewLinesThenCommaOrSemiColon: Regex.Matcher("^[ \t\n\r]*(;|؛|,|،)", 1);
+        def spacesAndNewLinesThenTildaOrDot: Regex.Matcher("^[ \t\n\r]*[~.]", 1);
+        def spacesAndNewLinesThenParen: Regex.Matcher("^[ \t\n\r]*\\(", 1);
+        def blockKeywordOnSameLineOrNextLine: Regex.Matcher(String.format(
+            "^[ \t]*\n?[ \t]*(module|class|function|func|handler|دالة|وحدة|عملية|صنف)%s", nonIdentifierChar.buf
+        ), 1);
 
         function getRules (): Array[SrdRef[Rule]] {
             def contextStack: SrdRef[Array[Context]];
@@ -85,7 +90,7 @@
                 }),
                 // Block Statements
                 Rule(
-                    String.format("(module|class|function|func|handler|دالة|وحدة|عملية)%s", nonIdentifierChar.buf),
+                    String.format("(module|class|function|func|handler|دالة|وحدة|عملية|صنف)%s", nonIdentifierChar.buf),
                     closure(args: Array[String]) {
                         if getCurrentContext(contextStack) == "comment" printSourceCode(args(0))
                         else {
@@ -149,7 +154,8 @@
                     else {
                         setCurrentContext(contextStack, "");
                         printSourceCode(args(0));
-                        handleNewLines(contextStack, 1);
+                        if isNext(blockKeywordOnSameLineOrNextLine) handleNewLines(contextStack, 2)
+                        else handleNewLines(contextStack, 1);
                     }
                 }),
                 // Parenthesis
@@ -225,18 +231,24 @@
                         }
                         printSourceCode("}");
                         popContextStack(contextStack);
+                        def isBlock: Bool = getCurrentContext(contextStack) == "block";
+                        def isBlockOrIf: Bool = isBlock or getCurrentContext(contextStack) == "if";
                         if isNext(spacesAndNewLinesThenElseKeyword) {
                             printSourceCode(" ");
                             skip(spacesAndNewLines);
+                        } else if isNext(spacesAndNewLinesThenTildaOrDot) {
+                            skip(spacesAndNewLines);
+                        } else if isNext(spacesAndNewLinesThenParen) and not isBlockOrIf {
+                            skip(spacesAndNewLines);
                         } else if isNext(spacesAndNewLinesThenCommaOrSemiColon) {
-                            if getCurrentContext(contextStack) == "block" {
+                            if isBlock {
                                 skip(spacesAndNewLinesThenCommaOrSemiColon);
                                 handleNewLines(contextStack, 2);
                             } else {
                                 skip(spacesAndNewLines);
                             }
                         } else if indented {
-                            if getCurrentContext(contextStack) == "block" {
+                            if isBlock {
                                 handleNewLines(contextStack, 2);
                             } else {
                                 handleNewLines(contextStack, 1);
@@ -246,6 +258,14 @@
                 }),
                 // Consecutive Words
                 Rule(String.format("(%s+)[ \t]+%s", identifierChar.buf, identifierChar.buf), closure(args: Array[String]) {
+                    if getCurrentContext(contextStack) == "comment" printSourceCode(args(0))
+                    else {
+                        printSourceCode(String.format("%s ", args(1).buf));
+                        moveBackUtf8Chars(1);
+                    }
+                }),
+                // Words Followed by Quote
+                Rule(String.format("(%s+)[ \t]*(\"|')", identifierChar.buf), closure(args: Array[String]) {
                     if getCurrentContext(contextStack) == "comment" printSourceCode(args(0))
                     else {
                         printSourceCode(String.format("%s ", args(1).buf));

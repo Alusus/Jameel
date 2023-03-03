@@ -1,3 +1,7 @@
+import "Srl/Console";
+import "Srl/Math";
+import "Srl/System";
+
 function jammil(sourceFile: String, destFile: String) {
     def fileContent: String = Fs.readFile(sourceFile);
     if fileContent == "" {

@@ -88,6 +88,19 @@ function three {
 }
 
 function four {
+    abc.{ member() }~cast[Def];
+    abc.{ member() }.member2();
+    abc.{
+        member()
+    }~cast[Def];
+    abc.{ member() }(123);
+    abc.{
+        member()
+    }(123);
+    if true {
+        fncall()
+    }
+    (someptr~cast[FnPtr])();
 }
 
 @mod1

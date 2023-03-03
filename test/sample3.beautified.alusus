@@ -1,3 +1,7 @@
+اشمل "مـتم/طـرفية"؛
+اشمل "مـتم/ريـاضيات"؛
+اشمل "مـتم/نـظام"؛
+
 function jammil(sourceFile: String, destFile: String) {
     def fileContent: String = Fs.readFile(sourceFile);
     if fileContent == "" {
@@ -100,4 +104,8 @@ sssa;
     إذا أفعل() أول وإلا ثاني
 }
 
-sssa
+صنف نـقطة {
+    عرف س: صحيح؛
+    عرف ص: صحيح
+}
+
