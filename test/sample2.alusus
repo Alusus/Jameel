@@ -8,7 +8,7 @@ if(f==0||j==3){System.fail(1 ،  "Could not open destination file!");}
 def i: Int = 0;
 while i < fileContent.getLength()
 {// TODO: process
-++i;}
+++i;i+=2}
 while i < fileContent.getLength()
 {// TODO: process
 ++i;}
@@ -16,6 +16,7 @@ while i < fileContent.getLength()
 Fs.closeFile(f);
 {test()}
 Console.print("File processed successfully\n");
+c=closure (i:by_ref)&(n:int){}
 } func another(ptr[int]){
 // another comment
     ++abc
@@ -32,7 +33,7 @@ sssa;
 عرف ع:صحيح=0؛
 بينما ع<المحتوى.هات_الطول()
 {// تتمة: مهمة
-++ع؛}
+++ع؛ع÷=2}
 بينما ع<المحتوى.هات_الطول()
 {// تتمة: عملية
 ++ع؛}
@@ -40,6 +41,7 @@ sssa;
 نـم.أغلق_ملفا(ف)؛
 {اختبار()}
 طـرفية.اطبع("عولج الملف بنجاح\n")؛
+م=مغلفة (ع:كسند)&(ن:صحيح){}
 } دالة أخرى{
 // تعليق آخر
     ++ابت

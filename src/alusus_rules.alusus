@@ -20,7 +20,8 @@
         def spacesAndNewLinesThenTildaOrDot: Regex.Matcher("^[ \t\n\r]*[~.]", 1);
         def spacesAndNewLinesThenParen: Regex.Matcher("^[ \t\n\r]*\\(", 1);
         def blockKeywordOnSameLineOrNextLine: Regex.Matcher(String.format(
-            "^[ \t]*\n?[ \t]*(module|class|function|func|handler|دالة|وحدة|عملية|صنف)%s", nonIdentifierChar.buf
+            "^[ \t]*\n?[ \t]*(module|class|function|func|handler|closure|مغلفة|دالة|وحدة|عملية|صنف)%s",
+            nonIdentifierChar.buf
         ), 1);
 
         function getRules (): Array[SrdRef[Rule]] {
@@ -79,7 +80,7 @@
                     else printSourceCode(args(1));
                 }),
                 // 2 Char Operators
-                Rule("(==|!=|<<|>>|&&|\\|\\|)[ \t]*", closure(args: Array[String]) {
+                Rule("(==|!=|<<|>>|&&|\\|\\||\\+=|-=|\\*=|/=|&=|\\|=|<<=|>>=|÷=|×=)[ \t]*", closure(args: Array[String]) {
                     if getCurrentContext(contextStack) == "comment" printSourceCode(args(0))
                     else printSourceCode(String.format(" %s ", args(1).buf));
                 }),
@@ -90,7 +91,10 @@
                 }),
                 // Block Statements
                 Rule(
-                    String.format("(module|class|function|func|handler|دالة|وحدة|عملية|صنف)%s", nonIdentifierChar.buf),
+                    String.format(
+                        "(module|class|function|func|handler|closure|مغلفة|دالة|وحدة|عملية|صنف)%s",
+                        nonIdentifierChar.buf
+                    ),
                     closure(args: Array[String]) {
                         if getCurrentContext(contextStack) == "comment" printSourceCode(args(0))
                         else {

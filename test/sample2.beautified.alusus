@@ -16,6 +16,7 @@ function jammil(sourceFile: String, destFile: String) {
     while i < fileContent.getLength() {
         // TODO: process
         ++i;
+        i += 2
     }
     while i < fileContent.getLength() {
         // TODO: process
@@ -25,6 +26,8 @@ function jammil(sourceFile: String, destFile: String) {
     Fs.closeFile(f);
     { test() }
         Console.print("File processed successfully\n");
+    c = closure (i: by_ref) & (n: int) {
+    }
 }
 
 func another(ptr[int]) {
@@ -57,6 +60,7 @@ sssa;
     بينما ع < المحتوى.هات_الطول() {
         // تتمة: مهمة
         ++ع؛
+        ع ÷= 2
     }
     بينما ع < المحتوى.هات_الطول() {
         // تتمة: عملية
@@ -66,6 +70,8 @@ sssa;
     نـم.أغلق_ملفا(ف)؛
     { اختبار() }
         طـرفية.اطبع("عولج الملف بنجاح\n")؛
+    م = مغلفة (ع: كسند) & (ن: صحيح) {
+    }
 }
 
 دالة أخرى {
