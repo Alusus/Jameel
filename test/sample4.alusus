@@ -94,3 +94,5 @@ function five{}
 func six(){ }
 @mod3[abc ]     function seven {}
 @mod4    function eight{}
+
+function nine{c='a';c='\'';}

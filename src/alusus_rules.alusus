@@ -50,6 +50,10 @@
                 Rule("\"([^\"]|\\\\\")*\"", closure(args: Array[String]) {
                     printSourceCode(args(0));
                 }),
+                // Char Literals
+                Rule("'([^']|\\\\')*'", closure(args: Array[String]) {
+                    printSourceCode(args(0));
+                }),
                 // Colon
                 Rule(":[ \t]*", closure(args: Array[String]) {
                     if getCurrentContext(contextStack) == "comment" printSourceCode(args(0))

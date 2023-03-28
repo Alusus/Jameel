@@ -117,3 +117,8 @@ func six() {
 @mod4 function eight {
 }
 
+function nine {
+    c = 'a';
+    c = '\'';
+}
+
