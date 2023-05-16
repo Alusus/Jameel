@@ -38,7 +38,7 @@ func another(ptr[int]) {
     } else {
         second
     }
-    if ido() {
+    if i >= 0 {
         first
     } else second
         if ido() first else second

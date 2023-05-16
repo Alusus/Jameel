@@ -84,7 +84,7 @@
                     else printSourceCode(args(1));
                 }),
                 // 2 Char Operators
-                Rule("(==|!=|<<|>>|&&|\\|\\||\\+=|-=|\\*=|/=|&=|\\|=|<<=|>>=|÷=|×=)[ \t]*", closure(args: Array[String]) {
+                Rule("(==|!=|<<|>>|&&|\\|\\||\\+=|-=|\\*=|/=|&=|\\|=|<=|>=|<<=|>>=|÷=|×=)[ \t]*", closure(args: Array[String]) {
                     if getCurrentContext(contextStack) == "comment" printSourceCode(args(0))
                     else printSourceCode(String.format(" %s ", args(1).buf));
                 }),

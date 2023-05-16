@@ -21,7 +21,7 @@ c=closure (i:by_ref)&(n:int){}
 // another comment
     ++abc
 if ido(){first}else{second}
-if ido(){first}else second
+if i>=0{first}else second
 if ido() first else second
 }
 sssa;
