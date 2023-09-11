@@ -44,6 +44,10 @@ func another(ptr[int]) {
         if ido() first else second
 }
 
+func test() => Int {
+    abc->defg
+}
+
 sssa;
 
 دالة جمل(المصدر: نـص, الهدف: نـص) {
@@ -86,6 +90,10 @@ sssa;
         أول
     } وإلا ثاني
         إذا أفعل() أول وإلا ثاني
+}
+
+دالة هات() => صـحيح {
+    ابت->جحخ؛
 }
 
 sssa
